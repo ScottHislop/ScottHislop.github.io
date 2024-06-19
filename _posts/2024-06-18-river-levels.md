@@ -111,3 +111,24 @@ or for R, one can use:
 url <- "https://github.com/ScottHislop/RiverHeightPredictions/blob/main/data/river-data.csv?raw=True"
 river_data = read.csv(url)
 ```
+
+## Exploratory Analysis
+
+We will now explore our data and determine a good model for our data. I chose to use the language R for this, as it has some powerful time series analysis packages. We'll be using the package *fpp3* for most of our analysis, which is based on a book [Forecasting: principles and practice, 3rd Edition](<https://otexts.com/fpp3/>). Firstly, we read the csv from the Github and convert it to a tsibble using the following code:
+
+```R
+url <- "https://github.com/ScottHislop/RiverHeightPredictions/blob/main/data/river-data.csv?raw=True"
+river_data <- readr::read_csv(url)
+  
+river_data <- river_data|>
+  mutate(Hour = dmy_hms(Datetime))|>
+  select(-Date,-Time, -Datetime, -Flag)|>
+  as_tsibble(index=Hour)
+```
+
+Now checking a plot of the height over time using the function *autoplot* we see:
+
+![Height-Time-plot](/ScottHislop.github.io/assets/img/Height-Time-Plot.png)
+
+There are several interesting points to note here:
+- 

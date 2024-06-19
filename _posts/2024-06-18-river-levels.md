@@ -29,17 +29,23 @@ However, the only way to obtain measurement values from these stations has a tim
 For the portion of the Cam where rowing takes place, there are three nearby stations for which data could be relevant for forecasting and d
 One good site to consider for obtaining river height data across England, Scotland and Wales is [riverlevels.uk](https://riverlevels.uk/) which displays data for all river level monitoring stations. For the portion of the Cam that rowing outings usually take place on, the relevant monitoring station is the Jesus Lock Sluice Auto Cambridge Monitoring Station, which can be found [here](https://riverlevels.uk/jesus-lock-sluice-auto-cambridge-cambridgeshire). River levels UK only displays the current value on the site, however past values can be downloaded in the form of a csv. To import this in sheets we use the sheets function:
 
-```=IMPORTXML("https://riverlevels.uk/jesus-lock-sluice-auto-cambridge-cambridgeshire","/html/body/div[4]/div[1]/div/div[1]/h2/span")```
+```t
+=IMPORTXML("https://riverlevels.uk/jesus-lock-sluice-auto-cambridge-cambridgeshire","/html/body/div[4]/div[1]/div/div[1]/h2/span") 
+```
 
 The first entry is the link to the website, and the second entry is the XML path to the part of the webpage that contains the river level value. One can determine this path more generally by using inspect element, then finding the html code corresponding to that part of the website. Next, one can right click on this portion and click "Copy XML path" to get the "html/body/div..." code for that component of the webpage. 
 
 There are other parts of the river we also want to collect data for. These are the height just above Jesus Lock, and just below Baitsbite Lock. The sluices above stream are adjusted to keep the height approximately the same, but the small variations may still have explanatory power. We get these data sources directly from the government Hydrology API. In the sheets implementation we import this data using code like:
 
-```=IMPORTDATA("http://environment.data.gov.uk/flood-monitoring/id/measures/E60501-level-stage-i-15_min-mASD/readings?latest")```
+```t
+=IMPORTDATA("http://environment.data.gov.uk/flood-monitoring/id/measures/E60501-level-stage-i-15_min-mASD/readings?latest")
+```
 
 This gets the most recent value as a JSON file which then spans multiple cells in Google Sheets. We're concerned with the value of that monitoring station, which can be found several lines into the JSON file we import. If one wants to look at more data, then they can write into a cell in sheets:
 
-```=IMPORTDATA("https://environment.data.gov.uk/flood-monitoring/id/measures/E60502-level-downstage-i-15_min-mAOD/readings?_sorted&_limit=2200")```
+```t
+=IMPORTDATA("https://environment.data.gov.uk/flood-monitoring/id/measures/E60502-level-downstage-i-15_min-mAOD/readings?_sorted&_limit=2200")
+```
 
 And then we can change the *_limit* parameter to vary how many records are shown. One can then reorder and transform this data to get the most recent n samples from that monitoring station. For my sheets implementation I only used the most recent values so this was not needed, but for another project it may be helpful to go back into the past using a large *_limit* value.
 
@@ -83,7 +89,9 @@ Of these, domain experience can tell us that the only column that may be relevan
 ### Importing the Weather data
 One approach is to import the current data using:
 
-```=IMPORTDATA("https://www.cl.cam.ac.uk/weather/txt/weather.txt")```
+```t
+=IMPORTDATA("https://www.cl.cam.ac.uk/weather/txt/weather.txt")
+```
 
 And add it as an extra column on our sheet to be recorded daily. One can also download the historical data since 1995 as a csv from the site and then transform this data into our desired output in sheets. The Computer Lab data is half hourly, so we will sum the rainfall to get the total amount each hour.  
 

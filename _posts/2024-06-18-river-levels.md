@@ -27,7 +27,7 @@ However, the only way to obtain measurement values from these stations has a tim
 
 ### River levels
 For the portion of the Cam where rowing takes place, there are three nearby stations for which data could be relevant for forecasting and d
-One good site to consider for obtaining river height data across England, Scotland and Wales is [riverlevels.uk](https://riverlevels.uk/) which displays data for all river level monitoring stations. For the portion of the Cam that rowing outings usually take place on, the relevant monitoring station is the Jesus Lock Sluice Auto Cambridge Monitoring Station, which can be found [here](https://riverlevels.uk/jesus-lock-sluice-auto-cambridge-cambridgeshire). River levels UK only displays the current value on the site, however past values can be downloaded in the form of a csv. To import this in sheets we use the sheets function:
+One good site to consider for obtaining river height data across England, Scotland and Wales is [riverlevels.uk](https://riverlevels.uk/) which displays data for all river level monitoring stations. For the portion of the Cam that rowing outings usually take place on, the relevant monitoring station is the [Jesus Lock Sluice Auto Cambridge Monitoring Station](<https://riverlevels.uk/jesus-lock-sluice-auto-cambridge-cambridgeshire>), which can be found [here](https://riverlevels.uk/jesus-lock-sluice-auto-cambridge-cambridgeshire). River levels UK only displays the current value on the site, however past values can be downloaded in the form of a csv. To import this in sheets we use the sheets function:
 
 ```t
 =IMPORTXML("https://riverlevels.uk/jesus-lock-sluice-auto-cambridge-cambridgeshire","/html/body/div[4]/div[1]/div/div[1]/h2/span") 
@@ -108,8 +108,6 @@ river_data = pd.read_csv(url)
 or for R, one can use:
 
 ```R
-url = "https://github.com/ScottHislop/RiverHeightPredictions/blob/main/data/river-data.csv?raw=True"
+url <- "https://github.com/ScottHislop/RiverHeightPredictions/blob/main/data/river-data.csv?raw=True"
 river_data = read.csv(url)
 ```
-
-## Exploratory Analysis

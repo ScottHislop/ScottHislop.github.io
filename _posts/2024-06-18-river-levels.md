@@ -128,7 +128,7 @@ river_data <- river_data|>
 
 Now checking a plot of the height over time using the function *autoplot* we see:
 
-![Height-Time-plot](/ScottHislop.github.io/assets/img/Height-Time-Plot.png)
+![Height-Time-plot](/assets/img/Height-Time-Plot.png)
 
 There are several interesting points to note here:
 - 

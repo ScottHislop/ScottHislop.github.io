@@ -93,8 +93,23 @@ One approach is to import the current data using:
 =IMPORTDATA("https://www.cl.cam.ac.uk/weather/txt/weather.txt")
 ```
 
-And add it as an extra column on our sheet to be recorded daily. One can also download the historical data since 1995 as a csv from the site and then transform this data into our desired output in sheets. The Computer Lab data is half hourly, so we will sum the rainfall to get the total amount each hour.  
+And add it as an extra column on our sheet to be recorded daily. The data from this source has cumulative rainfall, so if we store the cumulative rainfall, we can compute the rainfall in the past hour by subtracting the rainfall up to the previous hour (which has already been recorded) from the current rainfall. 
 
-This has half hourly weather details, but we have hourly data for the river levels. 
+Looking around the Computer Lab site we can also see the option to download the historical data since 1995 as a csv from the site and then transform this data into our desired output in sheets. The Computer Lab data is half hourly, so we will sum the rainfall to get the total amount each hour. Something like this could be used to fill in past data if all of your data sources provide historical data.
+
+### Accessing the data
+As described above, the system imports the relevant data into a google sheets file that uses automated triggers to store the new data as it comes in. In the Github [repository](https://github.com/ScottHislop/RiverHeightPredictions/) one can see a data file, which contains a csv that updates automatically using Github workflows. To access the data, one can use any way to import a csv hosted on Github. For instance using Pandas in Python:
+
+```python
+url = "https://github.com/ScottHislop/RiverHeightPredictions/blob/main/data/river-data.csv?raw=True"
+river_data = pd.read_csv(url)
+```
+
+or for R, one can use:
+
+```R
+url = "https://github.com/ScottHislop/RiverHeightPredictions/blob/main/data/river-data.csv?raw=True"
+river_data = read.csv(url)
+```
 
 ## Exploratory Analysis

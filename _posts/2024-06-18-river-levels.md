@@ -125,10 +125,157 @@ river_data <- river_data|>
   select(-Date,-Time, -Datetime, -Flag)|>
   as_tsibble(index=Hour)
 ```
+Next, we perform a test-train split on our data, putting the first 2000 data points into the train set, and the rest into the test set. We then produce a plot of the height over time using the following code:
 
-Now checking a plot of the height over time using the function *autoplot* we see:
+```R
+ggplot(train_river_data,aes(x=Hour))+
+  geom_line(aes(y=Height, color=as.factor(Flag)))+
+  geom_line(aes(y=Rain/15+3.8))+
+  scale_y_continuous(
+    "River Height at Jesus Lock",
+    sec.axis = sec_axis(~(.-3.8)*15, name="Rainfall (mm)")
+  )+
+  scale_color_manual(name="Flag", values = flag_color_vec)+
+  xlab("Time")+
+  ylab("Jesus Lock Sluice Height")
+```
+Where flag_color_vec is a vector describing which colours different flags should be coloured in as on the plot. We also plot the rainfall, changing the axes so they match up for easier interpretation. This produces the following:
 
-![Height-Time-Coloured](/docs/assets/images/Height-Time-Colored.png)
+![Height-Time-Coloured](/docs/assets/images/Height-Time-Coloured.png)
 
-There are several interesting points to note here:
-- 
+There are several interesting points to note here, both about the data quality and the river heights:
+- River heights seem to be between 3.8 meters and 4.2 meters high most of the time (Note that this height is not necessarily the depth of the river and we mostly care about relative changes in height)
+- Cancellations tend to happen when the height goes above 4.2m, although there is some variation
+- Outings are generally trickier (in the sense that inexperienced coxes are likely to struggle) when the height is above 4.1m. This is also when banks are likely to be flooded. These rare events are the ones we care most about.
+- There are some portions of the data with NA values. This was the result of [riverlevels.uk](https://riverlevels.uk/) changing where on the site they store the data. One could fix this by downloading the csv and filling in the gaps.
+- Rainfall definitely seems correlated with the river height, but some time periods (mid April) have large amounts of rainfall with no increase in river height, while other periods (early April) have a similar amount of rainfall and a large increase in river height. 
+
+### Explanatory variables
+We have 3 explanatory variables:
+- River height just upstream of Jesus lock
+- River height just below Baitsbite lock
+- Rainfall
+
+We would not necessarily expect rainfall to be particularly correlated with river height. This is because it takes some time for rain to flow into the portion of the river we have data for. Hence, if we saw a high spike in rainfall we might expect river height to increase a few hours later. Also, one can see that medium strength rainfall for a few hours would lead to similar changes in river height to a single hour of very strong rainfall. For this reason, a model considering lags in the relationships is needed.
+
+For the other variables, the river heights above and below the portion of the river we're concerned with, it is plausible that they have some effect on the current height and furthermore that this effect is near instantaneous. This is because the Sluice's that manage the height of the Cam and ensure the upstream height is kept low enough to prevent flooding have access to the data near instantly, so the rates of flow into and out of the section of river we wish to forecast may well be instantaneously affected by the explanatory variables. For this reason, we show the correlations between them:
+
+![River height correlations](/docs/assets/images/River-Height-Correlations.png)
+
+This is a plot created using the R function:
+
+```R
+GGally::ggpairs()
+```
+On the top right, we see correlation values between the two variables. On the bottom left, we see scatter plots of the two variables against one another. The diagonal contains density plots of the three variables. From this collection of plots, we see that the correlation between the above JL height and the height is particularly strong (as we would predict from the previous paragraph). We also see that the above JL height seems close to normally distributed, while the other heights have fat right tails. This is likely because the upstream height is kept as close as possible to constant to enable punters to use that section of river, while when heavy rainfalls occur the regions below Jesus Lock and below Baitsbite Lock tend to flood fairly heavily. 
+
+## Models
+
+### Linear model
+
+The first model we consider is perhaps the most basic, and will be used for comparison to other, more complex (and hopefully better performing) models. We will fit a linear model with dependent variable height, and independent variable rainfall. Doing so using the R code:
+
+```R
+train_river_data|>
+  model(TSLM(Height ~ Rain))|>
+  report()
+```
+One finds the output:
+```
+Series: Height 
+Model: TSLM 
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-0.10989 -0.05989 -0.03961  0.02011  0.44011 
+
+Coefficients:
+             Estimate Std. Error  t value Pr(>|t|)    
+(Intercept)  3.929885   0.002338 1680.526   <2e-16 ***
+Rain        -0.018031   0.007297   -2.471   0.0136 *  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.09757 on 1806 degrees of freedom
+Multiple R-squared: 0.00337,	Adjusted R-squared: 0.002818
+F-statistic: 6.106 on 1 and 1806 DF, p-value: 0.01356
+```
+
+From this we see:
+- Our residuals do not seem to be normally distributed, or at least the quantiles suggest the fit is far from perfect
+- The OLS estimate of the Rainfall coefficient has a negative value, implying rainfall actually reduces river height. It is also statistically significant.
+- The R squared value and adjusted R squared value are both very low, but we cannot yet determine if this is due to noisiness in our data or poor model performance.
+
+One can also look at the time series residuals plot:
+
+![Lin-Mod-TS-Resid](/docs/assets/images/Lin-Mod-TS-Resid.png)
+
+We can clearly see the model doesn't fit our data well as one should see:
+- No pattern in the innovation residuals (We see clear evidence of patterns)
+- Few (if any) points in the ACF plot outside of the Ljung-Box lines (Our model has every single value outside of the lines, implying strong autocorrelation between the residuals)
+- Normally distributed residuals (ours clearly have a very strong right tail)
+
+### Dynamic regression
+
+This is a technique which extends the linear model from the previous section. Instead of using iid normal random variables as the errors in our model, we let the errors contain autocorrelation. More specifically, we have:
+
+$$ y_t = b_0 + b_1 x_{1,t} + n_t$$
+
+where $n_t$ is some ARIMA model. The model then has two error terms, one from the regression model ($n_t$) and another from the ARIMA model. We assume the errors in the ARIMA model are white noise. Note that the model estimates are generally invalid when the data is non stationary. When time series are non stationary then we could employ differencing (Using $y_t - y_{t-1}$ instead of $y_t$) to remove the non stationarity and then fit the model on the differenced time series. One can automatically fit the best type of ARIMA model using the following code:
+
+```R
+fit_dyn_reg <- train_river_data|>
+  model(ARIMA(Height~Rain))
+```
+One can then see the model fitted using *report()* and find:
+
+```
+Series: Height 
+Model: LM w/ ARIMA(0,1,0)(1,0,0)[24] errors 
+
+Coefficients:
+        sar1    Rain
+      0.0142  -6e-04
+s.e.  0.0249   9e-04
+
+sigma^2 estimated as 0.0001514:  log likelihood=5280.6
+AIC=-10555.2   AICc=-10555.19   BIC=-10538.38
+```
+
+Close inspection of this model reveals that it has automatically selected a seasonal component. More specifically, it chose a seasonal period of 24, and identified that a model including a 1 seasonal lag was best. This is likely because, as we see in our data, there are three peaks each approximately 24 days apart. This is, however, entirely spurious and not an inherent feature of weather / river levels, so it should not be incorporated into our model. To remedy this, we add *"+PDQ(0,0,0)"* to our code, which forces the model to not include any seasonality in the ARIMA error component. The model, however, still has several statistically significant lags in the ACF plot as well as clear patterns in the innovation residuals.
+
+
+### Dynamic regression with lagged predictors
+
+Now we consider an extension to this dynamic regression model. We incorporate lags of the rainfall. We will fit several models with different numbers of lags and select the one with the highest AICc (AICc stands for the corrected Akaike Information Criterion. It is a measure used to compare the quality of different models and penalises models that include a larger number of predictors). We will fit models with lags 0,1,...,6, as 6 hours was a reasonable estimate for the time taken for water to flow into the river from the nearby parts of the water basin. Comparing the AICc values gives that 0 lags is the optimal number. This may be because the rain has an immediate (or within an hour) effect on the river height, and the autocorrelation component of the model handles the lagged nature of the rain's impact on river levels.
+
+### Neural network model:
+
+
+## Performance:
+Compare the different models performance with LOO-CV
+Create predictions of their forecasts into the future
+Compare the predictions to the out of sample data
+
+## Including the Upstream and downstream river heights:
+
+We can also add in the values for the upstream and downstream river heights. However, these are not forecastable. Thus, although we could quite easily add them as extra predictors in our dynamic regression model, this would not be useful in practice as we would not know the values in the future. To avoid this problem, there are two main approaches:
+- Forecast the other variables separately
+- Use an approach that considers all three river heights jointly
+As there is a strong physical argument for them being dependent on one another, it may be more appropriate to take the latter approach. I considered two main ways to do so:
+- Vector autoregressions
+- Neural networks
+
+### VAR method:
+
+### Neural network model:
+
+Fit a NN model for including upstream and downstream heights
+
+### Performance with upstream and downstream river heights:
+
+
+## Conclusion:
+
+## Further reading
+

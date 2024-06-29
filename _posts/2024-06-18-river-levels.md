@@ -111,7 +111,7 @@ or for R, one can use:
 url <- "https://github.com/ScottHislop/RiverHeightPredictions/blob/main/data/river-data.csv?raw=True"
 river_data = read.csv(url)
 ```
-If you want to use exactly the same data as I did below, download <a href="_data/river_data.csv">this csv</a>
+If you want to use exactly the same data as I did below, download <a href="data/river_data.csv" dowload = "river_data">this csv</a>
 
 ## Exploratory Analysis
 

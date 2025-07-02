@@ -1,5 +1,5 @@
 # Online Barnes Estimation
-16:02 test In this post we will briefly introduce Barnes interpolation and then cover a method of applying Barnes interpolation to an online context.
+16:03 test In this post we will briefly introduce Barnes interpolation and then cover a method of applying Barnes interpolation to an online context.
 
 ## Barnes Interpolation
 Say we have a collection of data $(X_1, Y_1), \cdots, (X_n,Y_n)$ which are iid pairs of covariates $X_i$ and responses $Y_i$. Also say that $(X_1, Y_1) \in R^d \times R$. For this problem want to learn about the function $\mu(x) = E[Y | X = x]$, the mean of $Y$ given that $X = x$. 

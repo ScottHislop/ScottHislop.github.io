@@ -21,10 +21,10 @@ Our goal is to apply Barnes interpolation in an online setting. This is a proble
 
 To achieve this, we can initialize our method with $$S_0 = 0, W_0 = 0$$ and then when data $$X_i, Y_i$$ comes in, we compute:
 
-$$ S^{(i)}\_j = S^{(i-1)}\_j + Y_i \times \exp\left(-\frac{d_i(z_j)^2}{2k^2}\right)$$
+$$ S^{(i)}_j = S^{(i-1)}_j + Y_i \times \exp\left(-\frac{d_i(z_j)^2}{2k^2}\right)$$
 
 as well as:
-$$ W^{(i)}\_j = W^{(i-1)}\_j + \times \exp\left(-\frac{d_i(z_j)^2}{2k^2}\right)$$
+$$ W^{(i)}_j = W^{(i-1)}_j + \exp\left(-\frac{d_i(z_j)^2}{2k^2}\right)$$
 
 for each $$j \in 1, \cdots, p$$. Then, if we want the Barnes estimate at a point $$z_j$$ on our grid we can compute $$\hat \mu^{(m)}(z_j) = S^{(m)}_j / W^{(m)}_j$$.
 
